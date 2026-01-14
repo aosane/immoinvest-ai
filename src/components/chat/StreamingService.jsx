@@ -151,20 +151,37 @@ export async function* streamApiResponse(message, apiEndpoint, conversationHisto
       throw new Error(`API error: ${response.status}`);
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullContent = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    // Vérifier si la réponse est du JSON (backend Python) ou du streaming
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      // Backend retourne du JSON (non-streaming)
+      const data = await response.json();
+      const reply = data.reply || data.message || data.content || '';
       
-      const chunk = decoder.decode(value);
-      fullContent += chunk;
-      yield fullContent;
+      // Simuler le streaming pour l'UX
+      const words = reply.split(' ');
+      for (let i = 0; i < words.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 30));
+        yield words.slice(0, i + 1).join(' ');
+      }
+    } else {
+      // Streaming classique
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        fullContent += chunk;
+        yield fullContent;
+      }
     }
   } catch (error) {
-    yield `❌ **Erreur de connexion au serveur**\n\nImpossible de joindre l'API : \`${apiEndpoint}\`\n\n> Vérifiez que votre backend est en cours d'exécution ou activez le **Mode Mock** dans les paramètres.`;
+    yield `❌ **Erreur de connexion au serveur**\n\nImpossible de joindre l'API : \`${apiEndpoint}\`\n\n> Vérifiez que votre backend est en cours d'exécution ou activez le **Mode Mock** dans les paramètres.\n\nDétails: ${error.message}`;
   }
 }
 

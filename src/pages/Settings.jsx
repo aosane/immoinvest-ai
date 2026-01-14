@@ -10,7 +10,8 @@ import {
   Building2,
   ExternalLink,
   Code,
-  AlertCircle
+  AlertCircle,
+  BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,16 +169,23 @@ export default function Settings() {
                     <Label htmlFor="api-endpoint">URL de l'endpoint API</Label>
                     <Input
                       id="api-endpoint"
-                      placeholder="https://votre-api.com/chat"
+                      placeholder="http://localhost:8000/chat"
                       value={formData.api_endpoint}
                       onChange={(e) => setFormData(prev => ({ ...prev, api_endpoint: e.target.value }))}
                       disabled={formData.mock_mode}
                       className="font-mono text-sm"
                     />
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      L'endpoint doit accepter des requêtes POST avec streaming
+                      Endpoint backend Python FastAPI (accepte POST JSON)
                     </p>
                   </div>
+
+                  <Link to={createPageUrl('Setup')}>
+                    <Button variant="outline" className="w-full">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      Guide d'installation du backend Python
+                    </Button>
+                  </Link>
 
                   {formData.mock_mode && (
                     <Alert>
@@ -228,63 +236,46 @@ export default function Settings() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-slate-800 dark:text-white">Endpoint attendu</h3>
+                    <h3 className="font-semibold text-slate-800 dark:text-white">Endpoint</h3>
                     <div className="bg-slate-900 dark:bg-slate-800 rounded-lg p-4">
                       <code className="text-green-400 text-sm">POST /chat</code>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-slate-800 dark:text-white">Corps de la requête</h3>
+                    <h3 className="font-semibold text-slate-800 dark:text-white">Requête</h3>
                     <div className="bg-slate-900 dark:bg-slate-800 rounded-lg p-4 overflow-x-auto">
                       <pre className="text-slate-100 text-sm">{`{
-  "message": "Question de l'utilisateur",
-  "history": [
-    {
-      "role": "user" | "assistant",
-      "content": "...",
-      "timestamp": "ISO 8601"
-    }
-  ]
+  "message": "Je veux investir à Bordeaux"
 }`}</pre>
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <h3 className="font-semibold text-slate-800 dark:text-white">Réponse (Streaming)</h3>
+                    <h3 className="font-semibold text-slate-800 dark:text-white">Réponse JSON</h3>
                     <div className="bg-slate-900 dark:bg-slate-800 rounded-lg p-4">
-                      <pre className="text-slate-100 text-sm">{`Content-Type: text/event-stream
-
-// Stream de texte token par token
-"Bonjour"
-" je"
-" suis"
-" votre"
-" assistant"
-"..."`}</pre>
+                      <pre className="text-slate-100 text-sm">{`{
+  "reply": "Réponse de l'assistant...",
+  "action": "city_snapshot",
+  "data": {
+    "city": "Bordeaux",
+    "postal_code": "33000",
+    ...
+  }
+}`}</pre>
                     </div>
                   </div>
 
                   <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                    <Code className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <AlertTitle className="text-blue-800 dark:text-blue-200">Exemple avec Python FastAPI</AlertTitle>
-                    <AlertDescription className="mt-2">
-                      <div className="bg-slate-900 rounded-lg p-3 mt-2 overflow-x-auto">
-                        <pre className="text-slate-100 text-xs">{`from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-
-app = FastAPI()
-
-@app.post("/chat")
-async def chat(request: ChatRequest):
-    async def generate():
-        for token in llm_response:
-            yield token
-    return StreamingResponse(
-        generate(),
-        media_type="text/event-stream"
-    )`}</pre>
-                      </div>
+                    <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <AlertTitle className="text-blue-800 dark:text-blue-200">Votre backend Python</AlertTitle>
+                    <AlertDescription className="mt-2 text-blue-700 dark:text-blue-300">
+                      Le backend supporte les réponses JSON. L'interface simule le streaming pour une meilleure expérience utilisateur.
+                      <Link to={createPageUrl('Setup')} className="block mt-2">
+                        <Button variant="outline" size="sm" className="text-xs">
+                          Voir le guide d'installation complet
+                        </Button>
+                      </Link>
                     </AlertDescription>
                   </Alert>
                 </CardContent>
