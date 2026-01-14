@@ -85,6 +85,16 @@ function buildRecentContext(history = [], message, maxTurns = 8) {
   );
 }
 
+function buildUserOnlyContext(history = [], message, maxTurns = 8) {
+  // Ne garde que les messages utilisateur pour éviter d'extraire des infos des réponses de l'IA
+  const slice = Array.isArray(history) ? history.slice(-maxTurns) : [];
+  const userMessages = slice
+    .filter((msg) => msg.role === "user")
+    .map((msg) => msg.content)
+    .join(" ");
+  return userMessages + " " + message;
+}
+
 /* ----------------------------- Intent detection ----------------------------- */
 
 function isRealEstateIntent(text) {
@@ -206,8 +216,9 @@ Deno.serve(async (req) => {
     }
 
     // ✅ 2) Même si useInstructions=true, on ne force pas le mode immo si ce n'est pas pertinent
-    const recentContext = buildRecentContext(hist, message, 8);
-    const immoIntent = isRealEstateIntent(recentContext);
+    // IMPORTANT : détection sur messages utilisateur uniquement, pas sur réponses IA
+    const userOnlyContext = buildUserOnlyContext(hist, message, 8);
+    const immoIntent = isRealEstateIntent(userOnlyContext);
 
     if (!immoIntent) {
       // Chat normal (conversation naturelle)
@@ -223,10 +234,10 @@ Deno.serve(async (req) => {
     }
 
     // ✅ 3) Ici seulement : on est en "mode immo"
-    // Extraction infos (sur contexte récent uniquement)
-    const city = extractCityGuess(recentContext);
-    const postalCode = extractPostalCode(recentContext);
-    const arrondissement = extractArrondissement(recentContext);
+    // Extraction infos (sur messages utilisateur uniquement pour éviter de récupérer les suggestions de l'IA)
+    const city = extractCityGuess(userOnlyContext);
+    const postalCode = extractPostalCode(userOnlyContext);
+    const arrondissement = extractArrondissement(userOnlyContext);
 
     // Demandes progressives mais naturelles
     if (!city) {
