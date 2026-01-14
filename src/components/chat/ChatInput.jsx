@@ -61,7 +61,7 @@ export default function ChatInput({ onSend, isLoading, placeholder }) {
       )}
 
       <form onSubmit={handleSubmit} className="px-4 py-4 md:px-8">
-        <div className="relative flex items-end gap-2 max-w-4xl mx-auto">
+        <div className="relative flex items-end gap-2 w-full">
           <div className="flex-1 relative">
             <Textarea
               ref={textareaRef}

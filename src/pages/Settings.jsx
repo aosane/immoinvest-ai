@@ -76,7 +76,7 @@ export default function Settings() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="w-full px-4 py-4 flex items-center gap-4">
           <Link to={createPageUrl('Chat')}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="w-5 h-5" />
@@ -95,7 +95,7 @@ export default function Settings() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="w-full px-4 py-8">
         <Tabs defaultValue="backend" className="space-y-6">
           <TabsList className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-1">
             <TabsTrigger value="backend" className="data-[state=active]:bg-amber-50 dark:data-[state=active]:bg-amber-900/20">

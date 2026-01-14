@@ -28,7 +28,7 @@ const features = [
 export default function EmptyState({ onStartConversation }) {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
-      <div className="max-w-2xl w-full">
+      <div className="w-full px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

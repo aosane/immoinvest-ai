@@ -200,7 +200,7 @@ export default function Chat() {
             <EmptyState onStartConversation={handleStartFromFeature} />
           ) : (
             <div className="flex-1 overflow-y-auto">
-              <div className="max-w-4xl mx-auto">
+              <div className="w-full">
                 {messages.map((msg) => (
                   <ChatMessage key={msg.id} message={msg} />
                 ))}
@@ -217,7 +217,7 @@ export default function Chat() {
             </div>
           )}
 
-          <div className="max-w-4xl mx-auto w-full">
+          <div className="w-full">
             <ChatInput
               onSend={handleSendMessage}
               isLoading={isStreaming}
