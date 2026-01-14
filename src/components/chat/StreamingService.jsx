@@ -134,6 +134,33 @@ export async function* streamMockResponse(message) {
   }
 }
 
+export async function* streamBackendFunction(message, conversationHistory = []) {
+  try {
+    const { base44 } = await import('@/api/base44Client');
+    
+    const response = await base44.functions.invoke('chatWithMistral', {
+      message,
+      history: conversationHistory
+    });
+
+    const reply = response.data?.reply || response.data?.message || '';
+    
+    if (!reply) {
+      yield '❌ Réponse vide du backend';
+      return;
+    }
+
+    // Simuler le streaming pour l'UX
+    const words = reply.split(' ');
+    for (let i = 0; i < words.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 30));
+      yield words.slice(0, i + 1).join(' ');
+    }
+  } catch (error) {
+    yield `❌ **Erreur backend function**\n\n${error.message}\n\n> Vérifiez que votre backend Python est lancé et accessible.`;
+  }
+}
+
 export async function* streamApiResponse(message, apiEndpoint, conversationHistory = []) {
   try {
     const response = await fetch(apiEndpoint, {
