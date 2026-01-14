@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -18,6 +19,7 @@ export default function Chat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [useInstructions, setUseInstructions] = useState(true);
   
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
@@ -132,7 +134,7 @@ export default function Chat() {
     if (settings.mock_mode) {
       streamGenerator = streamMockResponse(content);
     } else if (settings.use_backend_function) {
-      streamGenerator = streamBackendFunction(content, messages);
+      streamGenerator = streamBackendFunction(content, messages, useInstructions);
     } else {
       streamGenerator = streamApiResponse(content, settings.api_endpoint, messages);
     }
@@ -201,14 +203,23 @@ export default function Chat() {
               {activeConversation?.title || 'Nouvelle conversation'}
             </h1>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleNewConversation}
-            className="shrink-0"
-          >
-            Nouveau chat
-          </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+              <span className="text-xs text-slate-600 dark:text-slate-400">Instructions IA</span>
+              <Switch
+                checked={useInstructions}
+                onCheckedChange={setUseInstructions}
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNewConversation}
+              className="shrink-0"
+            >
+              Nouveau chat
+            </Button>
+          </div>
         </header>
 
         {/* Chat area */}

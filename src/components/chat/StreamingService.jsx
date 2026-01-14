@@ -134,13 +134,14 @@ export async function* streamMockResponse(message) {
   }
 }
 
-export async function* streamBackendFunction(message, conversationHistory = []) {
+export async function* streamBackendFunction(message, conversationHistory = [], useInstructions = true) {
   try {
     const { base44 } = await import('@/api/base44Client');
     
     const response = await base44.functions.invoke('chatWithMistral', {
       message,
-      history: conversationHistory
+      history: conversationHistory,
+      useInstructions
     });
 
     const reply = response.data?.reply || response.data?.message || '';

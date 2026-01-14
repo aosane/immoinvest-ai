@@ -53,12 +53,26 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { message, history } = await req.json();
+        const { message, history, useInstructions = true } = await req.json();
 
         if (!message || typeof message !== 'string') {
             return Response.json({ error: 'Message requis' }, { status: 400 });
         }
 
+        // Mode sans instructions : réponse LLM simple
+        if (!useInstructions) {
+            const result = await base44.integrations.Core.InvokeLLM({
+                prompt: message,
+                add_context_from_internet: false
+            });
+
+            return Response.json({
+                reply: result,
+                action: "simple_chat"
+            });
+        }
+
+        // Mode avec instructions immobilières
         // Construire le contexte complet (historique + message actuel)
         const fullContext = (history || [])
             .map(msg => `${msg.role === 'user' ? 'Utilisateur' : 'Assistant'}: ${msg.content}`)
