@@ -176,13 +176,12 @@ function isRealEstateIntent(text) {
 }
 
 function shouldUseInternetForImmo(message, history) {
-  // Internet seulement si on va réellement analyser une zone (ville+cp) ou si user demande "données / chiffres / source"
+  // Internet seulement si on va réellement analyser une zone ou demander des données précises
   const t = (message || "").toLowerCase();
-  const wantsData = ["source", "données", "chiffres", "meilleursagents", "prix", "loyer", "rendement"].some((k) =>
+  const wantsData = ["données", "chiffres", "meilleursagents", "prix", "loyer", "rendement", "marché", "statistiques"].some((k) =>
     t.includes(k)
   );
-  // Si on est en immo intent, on peut activer web
-  return wantsData || isRealEstateIntent(buildRecentContext(history || [], message, 6));
+  return wantsData;
 }
 
 /* ----------------------------- Response helpers ----------------------------- */
@@ -270,20 +269,46 @@ Deno.serve(async (req) => {
     const immoIntent = isRealEstateIntent(userOnlyContext);
 
     if (!immoIntent) {
-      // Conversation hors sujet immo : recadrer gentiment
+      // Début de conversation ou sujet hors immo : se présenter et guider
+      const isFirstMessage = hist.length === 0;
+      
+      const prompt = isFirstMessage 
+        ? `${SYSTEM_PROMPT}
+
+C'est le premier message de l'utilisateur. Présente-toi de manière engageante :
+
+## 👋 Bienvenue
+
+Je suis ton assistant spécialisé en **investissement immobilier locatif** en France.
+
+## 💡 Comment je peux t'aider
+
+- Choisir la meilleure ville pour investir
+- Analyser la rentabilité d'un marché local
+- Comparer prix d'achat et loyers
+- Optimiser ta stratégie d'investissement
+
+## 🎯 Par où commencer ?
+
+- Tu as déjà une ville en tête ? Dis-moi laquelle !
+- Tu ne sais pas où investir ? Je peux te guider (le mieux est d'investir dans une ville que tu connais bien)
+
+Message utilisateur : "${message}"`
+        : `${SYSTEM_PROMPT}
+
+L'utilisateur ne parle pas d'investissement locatif pour le moment.
+Réponds brièvement à son message, puis rappelle gentiment ton expertise et propose ton aide.
+
+Message utilisateur : "${message}"`;
+
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}
-
-L'utilisateur te parle mais ne semble pas poser une question sur l'investissement locatif.
-Réponds brièvement et naturellement, puis rappelle ton domaine d'expertise.
-
-Message utilisateur : "${message}"`,
+        prompt,
         add_context_from_internet: false,
       });
 
       return Response.json({
         reply: result,
-        action: "simple_chat",
+        action: "welcome",
       });
     }
 
