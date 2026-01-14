@@ -196,6 +196,16 @@ export default function Settings() {
                       </AlertDescription>
                     </Alert>
                   )}
+
+                  {!formData.mock_mode && (formData.api_endpoint.includes('localhost') || formData.api_endpoint.includes('127.0.0.1')) && (
+                    <Alert className="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800">
+                      <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                      <AlertTitle className="text-orange-800 dark:text-orange-200">URL localhost détectée</AlertTitle>
+                      <AlertDescription className="text-orange-700 dark:text-orange-300">
+                        Votre app ne peut pas accéder à localhost car elle est hébergée en ligne. Déployez votre backend ou utilisez ngrok.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </CardContent>
               </Card>
 

@@ -305,6 +305,58 @@ Content-Type: application/json
             </CardContent>
           </Card>
 
+          {/* Deployment options */}
+          <Card className="border-2 border-blue-200 dark:border-blue-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                <ExternalLink className="w-5 h-5" />
+                Options de déploiement
+              </CardTitle>
+              <CardDescription>
+                Pour utiliser votre backend avec l'app en ligne
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <AlertDescription className="text-amber-800 dark:text-amber-200">
+                  <strong>Important :</strong> Votre app Base44 est hébergée en ligne et ne peut pas accéder à localhost. Vous devez exposer votre backend.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">Option 1 : Ngrok (développement rapide)</h3>
+                <div className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
+                  <p>Exposez votre localhost temporairement :</p>
+                  <div className="bg-slate-900 rounded-lg p-3">
+                    <code className="text-green-400 text-xs">$ ngrok http 8000</code>
+                  </div>
+                  <p className="text-xs">Copiez l'URL HTTPS générée (ex: https://abc123.ngrok.io) et utilisez-la dans les paramètres avec le path <code className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">/chat</code></p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">Option 2 : Déploiement cloud (production)</h3>
+                <div className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
+                  <p>Déployez sur un service gratuit :</p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li><strong>Render</strong> : Déploiement gratuit Python</li>
+                    <li><strong>Railway</strong> : Support FastAPI natif</li>
+                    <li><strong>Fly.io</strong> : Déploiement Docker</li>
+                  </ul>
+                  <p className="text-xs mt-2">⚠️ N'oubliez pas d'installer Ollama sur le serveur ou utilisez une API externe (OpenAI, Anthropic, etc.)</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">Option 3 : Mode Mock (test local)</h3>
+                <div className="text-sm text-slate-600 dark:text-slate-400">
+                  <p>Activez le Mode Mock dans les paramètres pour tester l'interface sans backend.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Test */}
           <Card className="border-2 border-green-200 dark:border-green-800">
             <CardHeader>

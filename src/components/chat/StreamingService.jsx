@@ -181,7 +181,13 @@ export async function* streamApiResponse(message, apiEndpoint, conversationHisto
       }
     }
   } catch (error) {
-    yield `❌ **Erreur de connexion au serveur**\n\nImpossible de joindre l'API : \`${apiEndpoint}\`\n\n> Vérifiez que votre backend est en cours d'exécution ou activez le **Mode Mock** dans les paramètres.\n\nDétails: ${error.message}`;
+    const isLocalhost = apiEndpoint.includes('localhost') || apiEndpoint.includes('127.0.0.1');
+    
+    if (isLocalhost) {
+      yield `❌ **Impossible d'accéder à localhost**\n\n⚠️ Votre app est hébergée en ligne et ne peut pas accéder à \`${apiEndpoint}\` sur votre machine locale.\n\n**Solutions :**\n\n1. **Activez le Mode Mock** dans les paramètres pour tester l'interface\n2. **Déployez votre backend** sur un service cloud (Render, Railway, etc.)\n3. **Utilisez un tunnel** comme ngrok pour exposer votre localhost\n\n[Voir le guide de déploiement dans Paramètres → Setup]`;
+    } else {
+      yield `❌ **Erreur de connexion au serveur**\n\nImpossible de joindre l'API : \`${apiEndpoint}\`\n\n> Vérifiez que votre backend est en cours d'exécution ou activez le **Mode Mock** dans les paramètres.\n\nDétails: ${error.message}`;
+    }
   }
 }
 
