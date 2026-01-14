@@ -53,16 +53,21 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { message } = await req.json();
+        const { message, history } = await req.json();
 
         if (!message || typeof message !== 'string') {
             return Response.json({ error: 'Message requis' }, { status: 400 });
         }
 
-        // Extraire les infos du message
-        const city = extractCityGuess(message);
-        const postalCode = extractPostalCode(message);
-        const arrondissement = extractArrondissement(message);
+        // Construire le contexte complet (historique + message actuel)
+        const fullContext = (history || [])
+            .map(msg => `${msg.role === 'user' ? 'Utilisateur' : 'Assistant'}: ${msg.content}`)
+            .join('\n') + `\nUtilisateur: ${message}`;
+
+        // Extraire les infos du contexte complet (historique + message actuel)
+        const city = extractCityGuess(fullContext);
+        const postalCode = extractPostalCode(fullContext);
+        const arrondissement = extractArrondissement(fullContext);
 
         // Si pas de ville, demander
         if (!city) {
