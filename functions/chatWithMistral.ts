@@ -2,17 +2,57 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
  * ✅ Objectif
- * - Ne PAS forcer la ville/code postal si l'utilisateur ne parle pas d'immo
- * - Déclencher le "mode immo" seulement si intention claire (intent detection)
- * - Eviter de "s'accrocher" à une ville mentionnée il y a longtemps (contexte récent)
- * - Garder une conversation naturelle : si infos manquent, demander gentiment, sinon répondre normalement
+ * - Assistant spécialisé en investissement locatif
+ * - Tunnel conversationnel : présentation -> aide au choix de ville -> analyse précise
+ * - Récupération automatique du code postal via API gouvernementale
+ * - Réponses structurées et aérées (H1, H2, tableaux, listes)
  */
+
+const SYSTEM_PROMPT = `Tu es un assistant IA expert en investissement immobilier locatif en France.
+
+**Ton rôle :**
+- Conseiller sur l'investissement locatif (rentabilité, choix de ville, fiscalité, financement)
+- Analyser des marchés immobiliers locaux avec des données chiffrées
+- Aider à choisir une ville d'investissement
+
+**Important :**
+- Toujours structurer tes réponses avec des titres (##), des listes, des tableaux markdown si pertinent
+- Aérer avec des sauts de ligne entre sections
+- Être concret et pédagogique
+- Si l'utilisateur ne sait pas où investir, guide-le vers une ville qu'il connaît bien
+
+**Ce que tu NE fais PAS :**
+- Aide aux devoirs, rédaction générale, traduction, etc.
+- Sujets hors investissement immobilier
+
+Reste dans ton domaine d'expertise : l'investissement locatif.`;
 
 /* ----------------------------- Extractors ----------------------------- */
 
 function extractPostalCode(text) {
   const match = text.match(/\b(\d{5})\b/);
   return match ? match[1] : null;
+}
+
+async function getPostalCodeFromCity(cityName) {
+  try {
+    const response = await fetch('https://geo.api.gouv.fr/communes?fields=nom,code,codesPostaux&format=json&geometry=centre');
+    const communes = await response.json();
+    
+    const citySlug = cityName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    const match = communes.find(c => {
+      const nomSlug = c.nom.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return nomSlug === citySlug || nomSlug.includes(citySlug) || citySlug.includes(nomSlug);
+    });
+    
+    return match && match.codesPostaux && match.codesPostaux.length > 0 
+      ? match.codesPostaux[0] 
+      : null;
+  } catch (error) {
+    console.error("Erreur récupération code postal:", error);
+    return null;
+  }
 }
 
 function extractArrondissement(text) {
@@ -152,27 +192,36 @@ function safeNumber(x) {
 }
 
 function formatReplyFromResult(result) {
-  // result peut être un objet (schema) ou une string selon l'intégration
+  // Le résultat devrait déjà être bien formaté par le LLM avec les instructions
+  // On garde juste un fallback pour la compatibilité
   if (!result || typeof result !== "object") return String(result ?? "");
+  
+  if (result.analysis && typeof result.analysis === "string") {
+    return result.analysis;
+  }
 
-  let reply = result.analysis || "Voici mon analyse :";
+  let reply = "## 📊 Analyse du marché\n\n";
 
   const price = safeNumber(result.price_m2_avg);
   const rent = safeNumber(result.rent_m2_avg);
   const yieldGross = safeNumber(result.gross_yield);
 
-  if (price != null) reply += `\n📊 **Prix moyen**: ${Math.round(price)} €/m²`;
-  if (rent != null) reply += `\n💰 **Loyer moyen**: ${rent.toFixed(2)} €/m²/mois`;
-  if (yieldGross != null) reply += `\n📈 **Rendement brut estimé**: ${yieldGross.toFixed(2)}%`;
+  if (price != null || rent != null || yieldGross != null) {
+    reply += "| Indicateur | Valeur |\n|------------|--------|\n";
+    if (price != null) reply += `| Prix moyen au m² | ${Math.round(price)} € |\n`;
+    if (rent != null) reply += `| Loyer moyen au m² | ${rent.toFixed(2)} €/mois |\n`;
+    if (yieldGross != null) reply += `| Rendement brut | ${yieldGross.toFixed(2)}% |\n`;
+    reply += "\n";
+  }
 
   if (Array.isArray(result.best_neighborhoods) && result.best_neighborhoods.length > 0) {
-    reply += `\n\n🏘️ **Meilleurs quartiers**:\n${result.best_neighborhoods.map((n) => `- ${n}`).join("\n")}`;
+    reply += `## 🏘️ Meilleurs quartiers\n\n${result.best_neighborhoods.map((n) => `- ${n}`).join("\n")}\n\n`;
   }
 
   if (Array.isArray(result.recommendations) && result.recommendations.length > 0) {
-    reply += `\n\n💡 **Recommandations**:\n${result.recommendations
+    reply += `## 💡 Recommandations\n\n${result.recommendations
       .map((r, i) => `${i + 1}. ${r}`)
-      .join("\n")}`;
+      .join("\n")}\n`;
   }
 
   return reply;
@@ -202,7 +251,7 @@ Deno.serve(async (req) => {
 
     const hist = normalizeHistory(history);
 
-    // ✅ 1) Mode sans instructions : chat simple
+    // ✅ 1) Mode sans instructions : chat simple (LLM générique)
     if (!useInstructions) {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: message,
@@ -221,9 +270,14 @@ Deno.serve(async (req) => {
     const immoIntent = isRealEstateIntent(userOnlyContext);
 
     if (!immoIntent) {
-      // Chat normal (conversation naturelle)
+      // Conversation hors sujet immo : recadrer gentiment
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: message,
+        prompt: `${SYSTEM_PROMPT}
+
+L'utilisateur te parle mais ne semble pas poser une question sur l'investissement locatif.
+Réponds brièvement et naturellement, puis rappelle ton domaine d'expertise.
+
+Message utilisateur : "${message}"`,
         add_context_from_internet: false,
       });
 
@@ -241,31 +295,42 @@ Deno.serve(async (req) => {
 
     // Demandes progressives mais naturelles
     if (!city) {
-      // IMPORTANT: on ne bloque pas la conversation si la question est générale
-      // On propose 2 chemins: général vs chiffré
-      const prompt = `Tu es un assistant expert en investissement locatif.
-L'utilisateur parle d'investissement immobilier mais ne donne pas la ville.
-Réponds de façon naturelle:
-- Donne d'abord une réponse utile et générale liée à sa question.
-- Puis explique que pour chiffrer précisément (prix/loyer/rendement), il faut une ville + code postal.
-Question: "${message}"`;
+      const prompt = `${SYSTEM_PROMPT}
+
+L'utilisateur s'intéresse à l'investissement locatif mais n'a pas encore précisé de ville.
+
+**Ta mission :**
+1. Réponds d'abord à sa question de manière générale et utile
+2. Propose-lui de l'aider à choisir une ville d'investissement
+3. Conseil important : suggère d'investir dans une ville qu'il connaît bien (proximité, réseau local)
+4. Donne 2-3 exemples de villes attractives pour investir (grandes et moyennes villes)
+
+Structure ta réponse avec des titres markdown (##) et aère bien.
+
+Question utilisateur : "${message}"`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt,
-        add_context_from_internet: false,
+        add_context_from_internet: true,
       });
 
       return Response.json({
-        reply: `${result}\n\n📍 Pour une analyse chiffrée, dis-moi la **ville + code postal** (ex: "Bordeaux 33000").`,
+        reply: result,
         action: "ask_city",
       });
     }
 
     if (isArrondissementCity(city) && !arrondissement) {
-      const prompt = `Tu es un assistant expert en investissement locatif.
-L'utilisateur vise ${city} mais n'a pas précisé l'arrondissement.
-Réponds naturellement en demandant l'arrondissement, et propose un exemple concret.
-Message: "${message}"`;
+      const prompt = `${SYSTEM_PROMPT}
+
+L'utilisateur vise **${city}** pour investir mais n'a pas précisé l'arrondissement.
+
+Réponds de manière structurée :
+- Explique brièvement pourquoi l'arrondissement est important
+- Demande quel arrondissement l'intéresse
+- Donne 2-3 exemples d'arrondissements attractifs pour investir
+
+Message utilisateur : "${message}"`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt,
@@ -273,30 +338,39 @@ Message: "${message}"`;
       });
 
       return Response.json({
-        reply: `${result}\n\n🗺️ ${city} est découpée en arrondissements. Tu vises lequel ? (ex: "${city} 11e" + code postal)`,
+        reply: result,
         action: "ask_arrondissement",
       });
     }
 
-    if (!postalCode) {
-      const prompt = `Tu es un assistant expert en investissement locatif.
-L'utilisateur vise ${city}${arrondissement ? ` ${arrondissement}e` : ""} mais n'a pas donné le code postal.
-Réponds naturellement en demandant le code postal, brièvement.
-Message: "${message}"`;
+    // Récupérer automatiquement le code postal si pas fourni
+    let finalPostalCode = postalCode;
+    if (!finalPostalCode) {
+      finalPostalCode = await getPostalCodeFromCity(city);
+      
+      if (!finalPostalCode) {
+        const prompt = `${SYSTEM_PROMPT}
 
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt,
-        add_context_from_internet: false,
-      });
+L'utilisateur vise **${city}${arrondissement ? ` ${arrondissement}e arrondissement` : ""}** mais je n'ai pas trouvé automatiquement le code postal.
 
-      return Response.json({
-        reply: `${result}\n\n📮 Donne-moi le **code postal** de ${city}${arrondissement ? ` ${arrondissement}e` : ""} pour que je récupère les bons chiffres.`,
-        action: "ask_postal_code",
-      });
+Demande-lui le code postal de manière naturelle et concise.
+
+Message utilisateur : "${message}"`;
+
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt,
+          add_context_from_internet: false,
+        });
+
+        return Response.json({
+          reply: result,
+          action: "ask_postal_code",
+        });
+      }
     }
 
     // ✅ 4) On a ville + cp (+ éventuellement arrondissement) => on construit l'URL
-    const url = buildMeilleursAgentsUrl(city, postalCode, arrondissement);
+    const url = buildMeilleursAgentsUrl(city, finalPostalCode, arrondissement);
 
     // ✅ 5) Appel LLM structuré
     const schema = {
@@ -332,18 +406,37 @@ Message: "${message}"`;
       additionalProperties: true,
     };
 
-    const prompt = `Tu es un expert en investissement immobilier locatif.
+    const prompt = `${SYSTEM_PROMPT}
 
-Analyse la page ${url} et fournis:
-1) Le prix moyen au m² et le loyer moyen (si présents)
-2) Calcule un rendement brut proxy: (loyer_mensuel * 12 / prix_m2) * 100
-   - Si tu n'as que des loyers au m²: utilise (loyer_m2 * 12 / prix_m2) * 100
-3) Identifie les meilleurs quartiers pour investir (si la page donne des indices par quartiers; sinon, propose des heuristiques prudentes)
-4) Donne 3 recommandations concrètes basées sur les données trouvées (ou explique clairement ce qui manque)
+**Mission :** Analyse approfondie du marché immobilier de **${city}${arrondissement ? ` ${arrondissement}e arrondissement` : ""}** (${finalPostalCode})
 
-Question utilisateur: "${message}"
+**Source de données :** ${url}
 
-Réponds de manière claire, chiffrée, et exploitable.`;
+**Analyse attendue :**
+
+## 📊 Données du marché
+- Prix moyen au m² (appartement et maison si dispo)
+- Loyer moyen au m² 
+- Rendement brut estimé : (loyer_m2 * 12 / prix_m2) * 100
+
+## 🏘️ Meilleurs quartiers
+- Identifie les quartiers les plus intéressants pour investir
+- Explique pourquoi (prix, demande locative, évolution)
+
+## 💡 Recommandations
+- 3 conseils concrets et actionnables
+- Type de bien à privilégier
+- Points de vigilance
+
+**Format de réponse :**
+- Structure avec titres markdown (##)
+- Tableaux si pertinent pour comparer des données
+- Listes à puces
+- Aération entre sections
+- Emojis pour clarté
+
+Question utilisateur : "${message}"`;
+
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
@@ -358,7 +451,7 @@ Réponds de manière claire, chiffrée, et exploitable.`;
       action: "city_snapshot",
       data: {
         city,
-        postal_code: postalCode,
+        postal_code: finalPostalCode,
         arrondissement,
         source_url: url,
         ...(typeof result === "object" && result ? result : {}),
