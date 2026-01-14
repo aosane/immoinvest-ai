@@ -4,24 +4,24 @@ import { Building2, TrendingUp, Calculator, MapPin, FileText, Sparkles } from 'l
 
 const features = [
   {
+    icon: MapPin,
+    title: "Choisir ma ville d'investissement",
+    description: "Être guidé pour trouver où investir"
+  },
+  {
     icon: TrendingUp,
-    title: "Analyse de rentabilité",
-    description: "Calcul du rendement brut, net et cash-flow"
+    title: "Analyser une ville précise",
+    description: "Prix, loyers, rendement détaillés"
   },
   {
     icon: Calculator,
-    title: "Simulation fiscale",
-    description: "LMNP, LMP, Pinel, déficit foncier..."
+    title: "Comprendre la fiscalité locative",
+    description: "LMNP, Pinel, déficit foncier"
   },
   {
-    icon: MapPin,
-    title: "Conseil géographique",
-    description: "Villes à fort potentiel locatif"
-  },
-  {
-    icon: FileText,
-    title: "Montage de dossier",
-    description: "Financement et négociation bancaire"
+    icon: Building2,
+    title: "Comparer plusieurs villes",
+    description: "Identifier les meilleures opportunités"
   }
 ];
 
