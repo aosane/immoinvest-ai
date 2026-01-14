@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Building2, TrendingUp, Calculator, MapPin, FileText, Sparkles } from 'lucide-react';
+import { Building2, TrendingUp, Calculator, MapPin, Sparkles } from 'lucide-react';
 
 const features = [
   {

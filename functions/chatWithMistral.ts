@@ -116,7 +116,7 @@ function buildMeilleursAgentsUrl(city, postalCode, arrondissement) {
 
 /* ----------------------------- Context helpers ----------------------------- */
 
-function buildRecentContext(history = [], message, maxTurns = 8) {
+function buildRecentContext(history = [], message, maxTurns = 12) {
   const slice = Array.isArray(history) ? history.slice(-maxTurns) : [];
   return (
     slice
@@ -125,7 +125,7 @@ function buildRecentContext(history = [], message, maxTurns = 8) {
   );
 }
 
-function buildUserOnlyContext(history = [], message, maxTurns = 8) {
+function buildUserOnlyContext(history = [], message, maxTurns = 12) {
   // Ne garde que les messages utilisateur pour éviter d'extraire des infos des réponses de l'IA
   const slice = Array.isArray(history) ? history.slice(-maxTurns) : [];
   const userMessages = slice
@@ -296,14 +296,21 @@ Je suis ton assistant spécialisé en **investissement immobilier locatif** en F
 Message utilisateur : "${message}"`
         : `${SYSTEM_PROMPT}
 
-L'utilisateur ne parle pas d'investissement locatif pour le moment.
-Réponds brièvement à son message, puis rappelle gentiment ton expertise et propose ton aide.
+**Contexte de conversation récent :**
+${buildRecentContext(hist, message, 12)}
 
-Message utilisateur : "${message}"`;
+L'utilisateur pose une question qui ne semble pas directement liée à l'investissement locatif.
+
+**Ta mission :**
+- Comprends le contexte de la conversation
+- Si la question est liée indirectement (ex: code postal mentionné dans la conv), réponds-y
+- Sinon, réponds brièvement puis rappelle ton expertise
+
+Réponds de manière structurée et naturelle.`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt,
-        add_context_from_internet: false,
+        add_context_from_internet: true,
       });
 
       return Response.json({
@@ -320,7 +327,12 @@ Message utilisateur : "${message}"`;
 
     // Demandes progressives mais naturelles
     if (!city) {
+      const recentContext = buildRecentContext(hist, message, 6);
+      
       const prompt = `${SYSTEM_PROMPT}
+
+**Contexte récent :**
+${recentContext}
 
 L'utilisateur s'intéresse à l'investissement locatif mais n'a pas encore précisé de ville.
 
@@ -330,9 +342,10 @@ L'utilisateur s'intéresse à l'investissement locatif mais n'a pas encore préc
 3. Conseil important : suggère d'investir dans une ville qu'il connaît bien (proximité, réseau local)
 4. Donne 2-3 exemples de villes attractives pour investir (grandes et moyennes villes)
 
-Structure ta réponse avec des titres markdown (##) et aère bien.
-
-Question utilisateur : "${message}"`;
+**Format de réponse :**
+- Structure avec titres markdown (##)
+- Listes à puces
+- Aération entre sections`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt,
@@ -346,16 +359,21 @@ Question utilisateur : "${message}"`;
     }
 
     if (isArrondissementCity(city) && !arrondissement) {
+      const recentContext = buildRecentContext(hist, message, 6);
+      
       const prompt = `${SYSTEM_PROMPT}
+
+**Contexte récent :**
+${recentContext}
 
 L'utilisateur vise **${city}** pour investir mais n'a pas précisé l'arrondissement.
 
-Réponds de manière structurée :
+**Ta mission :**
 - Explique brièvement pourquoi l'arrondissement est important
 - Demande quel arrondissement l'intéresse
 - Donne 2-3 exemples d'arrondissements attractifs pour investir
 
-Message utilisateur : "${message}"`;
+**Format :** Réponse structurée avec titres (##) et listes`;
 
       const result = await base44.integrations.Core.InvokeLLM({
         prompt,
@@ -374,13 +392,16 @@ Message utilisateur : "${message}"`;
       finalPostalCode = await getPostalCodeFromCity(city);
       
       if (!finalPostalCode) {
+        const recentContext = buildRecentContext(hist, message, 6);
+        
         const prompt = `${SYSTEM_PROMPT}
+
+**Contexte récent :**
+${recentContext}
 
 L'utilisateur vise **${city}${arrondissement ? ` ${arrondissement}e arrondissement` : ""}** mais je n'ai pas trouvé automatiquement le code postal.
 
-Demande-lui le code postal de manière naturelle et concise.
-
-Message utilisateur : "${message}"`;
+Demande le code postal de manière naturelle et structurée.`;
 
         const result = await base44.integrations.Core.InvokeLLM({
           prompt,
@@ -431,13 +452,18 @@ Message utilisateur : "${message}"`;
       additionalProperties: true,
     };
 
+    const recentContext = buildRecentContext(hist, message, 6);
+    
     const prompt = `${SYSTEM_PROMPT}
+
+**Contexte de conversation :**
+${recentContext}
 
 **Mission :** Analyse approfondie du marché immobilier de **${city}${arrondissement ? ` ${arrondissement}e arrondissement` : ""}** (${finalPostalCode})
 
 **Source de données :** ${url}
 
-**Analyse attendue :**
+**Structure attendue de ta réponse :**
 
 ## 📊 Données du marché
 - Prix moyen au m² (appartement et maison si dispo)
@@ -448,19 +474,17 @@ Message utilisateur : "${message}"`;
 - Identifie les quartiers les plus intéressants pour investir
 - Explique pourquoi (prix, demande locative, évolution)
 
-## 💡 Recommandations
-- 3 conseils concrets et actionnables
+## 💡 Recommandations concrètes
+- 3 conseils actionnables
 - Type de bien à privilégier
 - Points de vigilance
 
-**Format de réponse :**
-- Structure avec titres markdown (##)
-- Tableaux si pertinent pour comparer des données
+**Format impératif :**
+- Titres markdown (##)
+- Tableaux pour données chiffrées comparatives
 - Listes à puces
-- Aération entre sections
-- Emojis pour clarté
-
-Question utilisateur : "${message}"`;
+- Sauts de ligne entre sections
+- Emojis pour clarté`;
 
 
     const result = await base44.integrations.Core.InvokeLLM({
