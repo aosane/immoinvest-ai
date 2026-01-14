@@ -82,8 +82,8 @@ export default function Sidebar({
             className="w-full justify-start gap-2 bg-gradient-to-r from-amber-500 to-amber-600 
                      hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/20"
           >
-            <Plus className="w-4 h-4" />
-            Nouvelle conversation
+            <Plus className="w-5 h-5" />
+            Nouveau chat
           </Button>
         </div>
 
