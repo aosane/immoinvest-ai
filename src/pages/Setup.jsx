@@ -227,15 +227,74 @@ beautifulsoup4`}</pre>
             </CardContent>
           </Card>
 
-          {/* Step 4: Configure frontend */}
-          <Card>
+          {/* Step 4: Backend Function (recommandé) */}
+          <Card className="border-2 border-amber-200 dark:border-amber-800">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-bold">
-                  4
+                  4a
                 </span>
-                Configurer le frontend
+                Méthode recommandée : Backend Function
               </CardTitle>
+              <CardDescription>Via Base44 (pas de problème CORS)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertDescription className="text-green-700 dark:text-green-300">
+                  J'ai créé la fonction <code className="px-1 py-0.5 rounded bg-green-100 dark:bg-green-900 text-xs font-mono">chatWithMistral</code> qui appelle votre backend Python !
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-300">Configuration</h3>
+                <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                  <p>1. Allez dans <strong>Dashboard → Code → Variables d'environnement</strong></p>
+                  <p>2. Ajoutez la variable :</p>
+                  <div className="bg-slate-900 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <code className="text-green-400 text-xs">PYTHON_BACKEND_URL</code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard('http://localhost:8000')}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <code className="text-slate-300 text-xs">http://localhost:8000</code>
+                  </div>
+                  <p className="text-xs">💡 Ou utilisez ngrok si votre app est en ligne : <code className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">https://votre-url.ngrok.io</code></p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm text-slate-600 dark:text-slate-400">3. Dans Paramètres :</p>
+                <ul className="list-disc list-inside space-y-1 text-sm text-slate-600 dark:text-slate-400 ml-2">
+                  <li>Désactivez le <strong>Mode Mock</strong></li>
+                  <li>Activez <strong>Backend Function</strong></li>
+                </ul>
+              </div>
+
+              <Link to={createPageUrl('Settings')}>
+                <Button className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700">
+                  <Terminal className="w-4 h-4 mr-2" />
+                  Configurer dans Paramètres
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Step 4b: Alternative direct API */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-bold">
+                  4b
+                </span>
+                Alternative : Appel API direct
+              </CardTitle>
+              <CardDescription>Nécessite ngrok ou déploiement cloud</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-slate-600 dark:text-slate-400">

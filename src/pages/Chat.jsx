@@ -9,7 +9,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import ChatMessage from '@/components/chat/ChatMessage';
 import ChatInput from '@/components/chat/ChatInput';
 import EmptyState from '@/components/chat/EmptyState';
-import { streamMockResponse, streamApiResponse, generateTitle } from '@/components/chat/StreamingService';
+import { streamMockResponse, streamApiResponse, streamBackendFunction, generateTitle } from '@/components/chat/StreamingService';
 
 export default function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -34,7 +34,7 @@ export default function Chat() {
     queryFn: () => base44.entities.Settings.list(),
   });
 
-  const settings = settingsData?.[0] || { mock_mode: true, api_endpoint: '' };
+  const settings = settingsData?.[0] || { mock_mode: true, use_backend_function: false, api_endpoint: '' };
 
   // Mutations
   const createConversation = useMutation({
@@ -127,9 +127,15 @@ export default function Chat() {
 
     // Stream response
     let fullResponse = '';
-    const streamGenerator = settings.mock_mode 
-      ? streamMockResponse(content)
-      : streamApiResponse(content, settings.api_endpoint, messages);
+    let streamGenerator;
+    
+    if (settings.mock_mode) {
+      streamGenerator = streamMockResponse(content);
+    } else if (settings.use_backend_function) {
+      streamGenerator = streamBackendFunction(content, messages);
+    } else {
+      streamGenerator = streamApiResponse(content, settings.api_endpoint, messages);
+    }
 
     for await (const chunk of streamGenerator) {
       fullResponse = chunk;

@@ -165,20 +165,36 @@ export default function Settings() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="api-endpoint">URL de l'endpoint API</Label>
-                    <Input
-                      id="api-endpoint"
-                      placeholder="http://localhost:8000/chat"
-                      value={formData.api_endpoint}
-                      onChange={(e) => setFormData(prev => ({ ...prev, api_endpoint: e.target.value }))}
-                      disabled={formData.mock_mode}
-                      className="font-mono text-sm"
-                    />
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Endpoint backend Python FastAPI (accepte POST JSON)
-                    </p>
-                  </div>
+                  {!formData.use_backend_function && (
+                    <div className="space-y-2">
+                      <Label htmlFor="api-endpoint">URL de l'endpoint API</Label>
+                      <Input
+                        id="api-endpoint"
+                        placeholder="http://localhost:8000/chat"
+                        value={formData.api_endpoint}
+                        onChange={(e) => setFormData(prev => ({ ...prev, api_endpoint: e.target.value }))}
+                        disabled={formData.mock_mode}
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Endpoint backend Python FastAPI (accepte POST JSON)
+                      </p>
+                    </div>
+                  )}
+
+                  {formData.use_backend_function && (
+                    <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertTitle className="text-green-800 dark:text-green-200">Backend Function activée</AlertTitle>
+                      <AlertDescription className="text-green-700 dark:text-green-300 space-y-2">
+                        <p>La fonction <code className="px-1 py-0.5 rounded bg-green-100 dark:bg-green-900 text-xs">chatWithMistral</code> sera utilisée.</p>
+                        <p className="text-xs">Configurez l'URL de votre backend Python dans les variables d'environnement :</p>
+                        <code className="block px-2 py-1 rounded bg-slate-900 text-slate-100 text-xs mt-1">
+                          PYTHON_BACKEND_URL=http://localhost:8000
+                        </code>
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   <Link to={createPageUrl('Setup')}>
                     <Button variant="outline" className="w-full">
