@@ -37,6 +37,7 @@ export default function Settings() {
 
   const [formData, setFormData] = useState({
     mock_mode: true,
+    use_backend_function: false,
     api_endpoint: '',
     theme: 'light'
   });
@@ -47,6 +48,7 @@ export default function Settings() {
     if (settings) {
       setFormData({
         mock_mode: settings.mock_mode ?? true,
+        use_backend_function: settings.use_backend_function ?? false,
         api_endpoint: settings.api_endpoint || '',
         theme: settings.theme || 'light'
       });
@@ -130,7 +132,7 @@ export default function Settings() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <Label htmlFor="mock-mode" className="text-base font-medium">
@@ -146,6 +148,24 @@ export default function Settings() {
                       onCheckedChange={(checked) => setFormData(prev => ({ ...prev, mock_mode: checked }))}
                     />
                   </div>
+
+                  {!formData.mock_mode && (
+                    <div className="flex items-center justify-between border-t pt-6">
+                      <div className="space-y-1">
+                        <Label htmlFor="backend-function" className="text-base font-medium">
+                          Backend Function
+                        </Label>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          Utiliser une backend function Base44 (recommandé)
+                        </p>
+                      </div>
+                      <Switch
+                        id="backend-function"
+                        checked={formData.use_backend_function}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, use_backend_function: checked }))}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
