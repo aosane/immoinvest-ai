@@ -1,0 +1,42 @@
+{
+  "name": "Conversation",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titre de la conversation"
+    },
+    "messages": {
+      "type": "array",
+      "description": "Liste des messages de la conversation",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "last_message_preview": {
+      "type": "string",
+      "description": "Aper\u00e7u du dernier message"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

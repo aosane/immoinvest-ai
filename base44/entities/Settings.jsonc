@@ -1,0 +1,29 @@
+{
+  "name": "Settings",
+  "type": "object",
+  "properties": {
+    "mock_mode": {
+      "type": "boolean",
+      "default": true,
+      "description": "Activer le mode mock backend"
+    },
+    "use_backend_function": {
+      "type": "boolean",
+      "default": false,
+      "description": "Utiliser la backend function au lieu d'appeler l'API directement"
+    },
+    "api_endpoint": {
+      "type": "string",
+      "description": "URL de l'API backend (uniquement si use_backend_function est false)"
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "light",
+        "dark"
+      ],
+      "default": "dark"
+    }
+  },
+  "required": []
+}
